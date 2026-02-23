@@ -1,0 +1,5 @@
+file_path,speaker_id,gender,language
+dataset/male_en_01.wav,speaker_1,male,english
+dataset/female_en_01.wav,speaker_2,female,english
+dataset/male_uk_01.wav,speaker_3,male,ukrainian
+dataset/female_uk_01.wav,speaker_4,female,ukrainian
