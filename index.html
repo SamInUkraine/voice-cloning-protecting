@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Порівняння аудіо</title>
+  <style>
+    :root {
+      --bg: #f8f8fb;
+      --card: rgba(255, 255, 255, 0.88);
+      --text: #141827;
+      --muted: #687086;
+      --line: #e4e2ec;
+      --accent: #7b61b8;
+      --accent-soft: #d8cfef;
+      --shadow: 0 18px 45px rgba(28, 31, 48, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(123, 97, 184, 0.08), transparent 34%),
+        linear-gradient(180deg, #fbfbfd 0%, var(--bg) 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .page {
+      width: min(1480px, calc(100% - 64px));
+      margin: 0 auto;
+      padding: 54px 0 64px;
+    }
+
+    header { margin-bottom: 42px; }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(42px, 5vw, 66px);
+      line-height: 0.98;
+      letter-spacing: -0.055em;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: clamp(16px, 1.5vw, 21px);
+      color: var(--muted);
+      letter-spacing: -0.01em;
+    }
+
+    .comparison {
+      display: grid;
+      gap: 22px;
+    }
+
+    .audio-card {
+      display: grid;
+      grid-template-columns: 36% 64%;
+      align-items: stretch;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(18px);
+    }
+
+    .audio-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: clamp(32px, 4vw, 52px);
+      border-right: 1px solid var(--line);
+      min-height: 285px;
+    }
+
+    .audio-title {
+      margin: 0 0 8px;
+      font-size: clamp(24px, 2.5vw, 34px);
+      line-height: 1.08;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+    }
+
+    .filename {
+      margin: 0 0 42px;
+      color: var(--accent);
+      font-size: clamp(17px, 1.7vw, 21px);
+      letter-spacing: -0.01em;
+    }
+
+    .player {
+      display: grid;
+      grid-template-columns: auto auto 1fr auto;
+      gap: 22px;
+      align-items: center;
+      max-width: 470px;
+    }
+
+    .play {
+      width: 64px;
+      height: 64px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #8064bf, #7156ac);
+      color: white;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 12px 28px rgba(123, 97, 184, 0.25);
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    }
+
+    .play:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 34px rgba(123, 97, 184, 0.31);
+    }
+
+    .play:active { transform: translateY(0) scale(0.98); }
+
+    .play svg {
+      width: 27px;
+      height: 27px;
+      margin-left: 3px;
+      fill: currentColor;
+    }
+
+    .play.is-playing svg { margin-left: 0; }
+
+    .time {
+      font-variant-numeric: tabular-nums;
+      color: #566078;
+      font-size: 17px;
+      min-width: 42px;
+    }
+
+    .range {
+      position: relative;
+      height: 22px;
+      display: flex;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      appearance: none;
+      height: 5px;
+      border-radius: 99px;
+      background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--progress, 0%), var(--accent-soft) var(--progress, 0%), var(--accent-soft) 100%);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(123, 97, 184, 0.10);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 17px;
+      height: 17px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(123, 97, 184, 0.10);
+    }
+
+    .spectrogram-wrap {
+      padding: 22px 28px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .spectrogram {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 9px;
+      filter: saturate(0.95) contrast(0.98);
+    }
+
+    .audio-source { display: none; }
+
+    @media (max-width: 980px) {
+      .page {
+        width: min(100% - 32px, 760px);
+        padding-top: 36px;
+      }
+
+      .audio-card { grid-template-columns: 1fr; }
+
+      .audio-info {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        min-height: auto;
+      }
+
+      .player { max-width: none; }
+
+      .spectrogram-wrap { padding: 20px; }
+    }
+
+    @media (max-width: 560px) {
+      .page { width: min(100% - 22px, 760px); }
+
+      .audio-info { padding: 28px 22px; }
+
+      .filename { margin-bottom: 28px; }
+
+      .player {
+        grid-template-columns: auto auto 1fr auto;
+        gap: 12px;
+      }
+
+      .play {
+        width: 54px;
+        height: 54px;
+      }
+
+      .time {
+        font-size: 15px;
+        min-width: 36px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="comparison" aria-label="Порівняння аудіофайлів">
+      <article class="audio-card">
+        <div class="audio-info">
+          <h2 class="audio-title">Оригінальне аудіо</h2>
+          <div class="player" data-audio-player>
+            <button class="play" type="button" aria-label="Відтворити оригінальне аудіо">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </button>
+            <span class="time current">0:00</span>
+            <label class="range" aria-label="Прогрес відтворення">
+              <input type="range" min="0" max="100" value="0" step="0.1" />
+            </label>
+            <span class="time duration">0:18</span>
+            <audio class="audio-source" preload="metadata" src="audio/voice_clean.wav"></audio>
+          </div>
+        </div>
+
+        <div class="spectrogram-wrap">
+          <img class="spectrogram" src="assets/spectrogram-original.png" alt="Спектрограма оригінального аудіо" />
+        </div>
+      </article>
+
+      <article class="audio-card">
+        <div class="audio-info">
+          <h2 class="audio-title">Захищене аудіо</h2>
+          <div class="player" data-audio-player>
+            <button class="play" type="button" aria-label="Відтворити захищене аудіо">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </button>
+            <span class="time current">0:00</span>
+            <label class="range" aria-label="Прогрес відтворення">
+              <input type="range" min="0" max="100" value="0" step="0.1" />
+            </label>
+            <span class="time duration">0:18</span>
+            <audio class="audio-source" preload="metadata" src="audio/voice_protected.wav"></audio>
+          </div>
+        </div>
+
+        <div class="spectrogram-wrap">
+          <img class="spectrogram" src="assets/spectrogram-protected.png" alt="Спектрограма захищеного аудіо" />
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const playIcon = '<path d="M8 5v14l11-7z" />';
+    const pauseIcon = '<path d="M7 5h4v14H7zM13 5h4v14h-4z" />';
+    const players = Array.from(document.querySelectorAll('[data-audio-player]'));
+
+    function formatTime(value) {
+      if (!Number.isFinite(value)) return '0:00';
+      const minutes = Math.floor(value / 60);
+      const seconds = Math.floor(value % 60).toString().padStart(2, '0');
+      return `${minutes}:${seconds}`;
+    }
+
+    function updateProgress(range, current, duration) {
+      const percent = duration ? (current / duration) * 100 : 0;
+      range.value = percent;
+      range.style.setProperty('--progress', `${percent}%`);
+    }
+
+    players.forEach((player) => {
+      const audio = player.querySelector('audio');
+      const button = player.querySelector('.play');
+      const svg = button.querySelector('svg');
+      const current = player.querySelector('.current');
+      const duration = player.querySelector('.duration');
+      const range = player.querySelector('input[type="range"]');
+
+      audio.addEventListener('loadedmetadata', () => {
+        duration.textContent = formatTime(audio.duration);
+      });
+
+      button.addEventListener('click', async () => {
+        players.forEach((otherPlayer) => {
+          const otherAudio = otherPlayer.querySelector('audio');
+          const otherButton = otherPlayer.querySelector('.play');
+          const otherSvg = otherButton.querySelector('svg');
+
+          if (otherAudio !== audio) {
+            otherAudio.pause();
+            otherButton.classList.remove('is-playing');
+            otherSvg.innerHTML = playIcon;
+          }
+        });
+
+        if (audio.paused) {
+          try {
+            await audio.play();
+          } catch (error) {
+            alert('Не вдалося відтворити аудіо. Перевірте, чи файл є в папці audio.');
+          }
+        } else {
+          audio.pause();
+        }
+      });
+
+      audio.addEventListener('play', () => {
+        button.classList.add('is-playing');
+        svg.innerHTML = pauseIcon;
+      });
+
+      audio.addEventListener('pause', () => {
+        button.classList.remove('is-playing');
+        svg.innerHTML = playIcon;
+      });
+
+      audio.addEventListener('ended', () => {
+        button.classList.remove('is-playing');
+        svg.innerHTML = playIcon;
+        updateProgress(range, 0, audio.duration);
+        current.textContent = '0:00';
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        current.textContent = formatTime(audio.currentTime);
+        updateProgress(range, audio.currentTime, audio.duration);
+      });
+
+      range.addEventListener('input', () => {
+        if (!Number.isFinite(audio.duration)) return;
+        audio.currentTime = (Number(range.value) / 100) * audio.duration;
+        updateProgress(range, audio.currentTime, audio.duration);
+      });
+    });
+  </script>
+</body>
+</html>
